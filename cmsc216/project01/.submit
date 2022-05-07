@@ -1,0 +1,11 @@
+# Submit server .submit file for
+#  Course CMSC 216
+#  Project project01: Project #1
+
+courseName=CMSC 216
+semester=202201
+projectNumber=project01
+courseKey=e1bc2325e54b7373
+authentication.type=cas
+baseURL=https://submit.cs.umd.edu:443/spring2022
+submitURL=https://submit.cs.umd.edu:443/spring2022/eclipse/SubmitProjectViaEclipse

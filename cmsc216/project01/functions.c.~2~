@@ -1,0 +1,35 @@
+#include "functions.h"
+
+int classify_triangle(int side1, int side2, int side3) {
+  int num = 0;
+
+  if (side1 <= 0 || side2 <= 0 || side3 <= 0) {
+    if (side1 + side2 <= side3 || side2 + side3 <= side1 || side1 + side3 <= 0) {
+      return -1;
+    }
+  }
+
+  if (side1 == side2 && side1 == side3) {
+    num = 3;
+  } else if (side1 == side2 && side1 != side3) {
+    num = 2;
+  } else {
+    num = 0;
+  }
+
+  return num;
+}
+
+long reverse_digits(long n) {
+  /*if (n < 0 || n % 10 == 0) {
+    return -1;
+  }
+  */
+
+
+  return 54321;
+}
+
+unsigned long catalan(short int n) {
+  return 13579;
+}

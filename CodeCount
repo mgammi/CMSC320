@@ -1,0 +1,131 @@
+data1 = pd.read_csv("p01ar.csv", header=6) #header starts in row 6
+print(data1.dtypes)
+data1.head(7)
+data1 = data1.rename(columns = {"Per capita income": "Current PCI in Dollars", "Unnamed: 3":"2021 PCI in Dollars"}) #rename headers
+data1 = data1.drop(index = [0]) # now can drop the first row 
+data1.head(7)
+data1['Year'] = data1['Year'].apply(lambda item : (str(item[:4])) if str.__contains__(str(item),'(') == True else item) #want to remove the numbers in paranthesis next to the years
+data1['Number (thousands)'] = data1['Number (thousands)'].apply(lambda item : (item.replace(",", "") if str.__contains__(str(item),',') == True else item))
+data1['Current PCI in Dollars'] = data1['Current PCI in Dollars'].apply(lambda item : (item.replace(",", "") if str.__contains__(str(item),',') == True else item))
+data1['2021 PCI in Dollars'] = data1['2021 PCI in Dollars'].apply(lambda item : (item.replace(",", "") if str.__contains__(str(item),',') == True else item))
+data1 = data1.astype({'Number (thousands)': int, 'Current PCI in Dollars': int, '2021 PCI in Dollars':int, 'Year': int})
+print(data1.dtypes)
+data1.head(10)
+data2 = pd.read_excel("hstpov16.xlsx", header = 3) #note: 2 levels of headers
+data2.head()
+dataNew = data2.loc[:32, ["Year","Native","Unnamed: 5", "Unnamed: 6"]]
+dataNew['Year'] = dataNew['Year'].apply(lambda item : (str(item[:4])) if str.__contains__(str(item),'(') == True else item) #want to remove the numbers in paranthesis next to the years
+dataNew = dataNew.rename(columns = {"Native": "Total", "Unnamed: 5":"Number in Poverty", "Unnamed: 6": "Percent in Poverty"}) #rename headers
+dataNew = dataNew.drop(index = [0,1])
+print(dataNew.dtypes)
+dataNew.head(50)
+dataNew = dataNew.astype({'Year':'int', 'Total':int, 'Number in Poverty':int, 'Percent in Poverty':float})
+print(dataNew.dtypes)
+data3 = pd.read_excel("/Users/managammi/CMSC320/mgammi.github.io/hstpov2 .xlsx", header = 4 ) #several headers, first one starts on line 4
+print(data3.dtypes)
+data3.head()
+data3 = data3.rename(columns = {"All people" : "Total Number", "Unnamed: 2": "Number Below Poverty",  "Unnamed: 3": "Percent Below Poverty"})
+data3 = data3.loc[:, ["Year", "Total Number","Number Below Poverty","Percent Below Poverty"]]
+data3['Year'] = data3['Year'].apply(lambda item : (str(item[:4])) if str.__contains__(str(item),'(') == True else item) 
+data3.head()
+dataAllRaces= data3.iloc[3:68,:]
+dataAllRaces
+dataWhite = data3.iloc[73:143,:]
+dataWhite['Race'] = 'White'
+dataWhite= dataWhite.dropna()
+dataWhite.head()
+dataBlack = data3.iloc[236:300,:]
+dataBlack['Race'] = 'Black'
+dataBlack = dataBlack.dropna()
+dataBlack.head()
+dataAsian= data3.iloc[332:374,:]
+dataAsian['Race'] = 'Asian/Pacific Islander'
+dataAsian = dataAsian.dropna()
+dataAsian.head()
+dataNA= data3.iloc[406:448,:]
+dataNA['Race'] = 'American Indian/AN' #Native American, Alaska Native
+dataNA = dataNA.dropna()
+dataNA.head()
+dataHispanic = data3.iloc[480:532,:] 
+dataHispanic['Race'] = 'Hispanic'
+dataHispanic = dataHispanic.dropna()
+dataHispanic.head()
+finalDF = pd.concat([ dataHispanic ,dataWhite , dataAsian , dataBlack, dataNA], ignore_index=True, axis=0)
+finalDF= finalDF.astype({'Year':'int', 'Total Number':int, 'Number Below Poverty':int, 'Percent Below Poverty':float})
+print(finalDF.dtypes)
+finalDF
+povByRace = pd.read_csv("povRace.csv", header=2)
+povByRace.head(20)
+povByRace = povByRace.drop(columns = {"Footnotes"}) #dont need
+povByRace.head()
+print(povByRace.dtypes) 
+url = 'https://www.pgpf.org/blog/2023/02/income-and-wealth-in-the-united-states-an-overview-of-recent-data'
+medByRace = requests.get(url)
+soup1 = BeautifulSoup(medByRace.content, 'html.parser')
+print(soup1.prettify())
+table1 = soup1.findAll('table')
+tables = pd.read_html(str(table1))
+df = tables[0]
+df
+colors = {"American Indian/AN" : "green", "Hispanic" : "red", "Black" : "blue", "White": "purple" , "Asian/Pacific Islander" : "orange"}
+fig, ax = plt.subplots(figsize=(7, 7))
+groupedDF = finalDF.groupby(['Race'])
+for key, group in groupedDF :
+        group.plot(ax = ax, kind='scatter', y='Percent Below Poverty', x='Race', label=key,color=colors[key])
+plt.xlabel('Race')
+plt.ylabel('Percent Below Poverty')
+plt.show()
+fig, ax = plt.subplots(figsize=(7, 7))
+for key, group in groupedDF :
+        group.plot(ax = ax, kind='scatter', y='Percent Below Poverty', x='Year', label=key,color=colors[key])
+
+plt.xlabel('Year')
+plt.ylabel('Percent Below Poverty')
+plt.show()
+finalDF['Prediction'] = " "
+groupedDF = finalDF.groupby(['Race'])
+fig, ax = plt.subplots(figsize=(7, 7))
+predictions = {"Year":[], "American Indian/AN" : [], "Hispanic" : [], "Black" :[], "White": [] , "Asian/Pacific Islander" : []}
+for key, group in groupedDF :
+    group.plot(ax = ax, kind='scatter', y='Percent Below Poverty', x='Year', label=key,color=colors[key])
+    x = group['Year'].to_numpy().reshape(-1,1) #saving as valye bc will be using
+    reg = LinearRegression().fit(x, group['Percent Below Poverty'].to_numpy().reshape(-1,1))
+    race_y_pred = reg.predict(x) #using regression to predict values of y given values of x (can compare this prediction to actual)
+    predictions [key].append(race_y_pred) 
+    predictions['Year'] = x.astype(int).astype(str)
+    plt.plot(x,race_y_pred, color = colors[key],  label = str(key) +  " RL")
+    print(key +":" + str(reg.intercept_) + "," + str(reg.coef_)) #save for later
+
+plt.xlabel('Year')
+plt.ylabel('Percent Below Poverty')
+plt.show()
+print(finalDF.head())
+res = smf.ols(formula= "Q(\"Percent Below Poverty\") ~ Race", data=finalDF).fit()
+print(res.summary())
+predicts = pd.DataFrame(map(np.ravel, predictions.values()), index=predictions.keys()).T
+newPredicts = pd.DataFrame({"Prediction" : pd.concat([predicts["Hispanic"].loc[0:51], predicts["White"], predicts["Asian/Pacific Islander"].loc[0:36], predicts["Black"].loc[0:58], predicts["American Indian/AN"].loc[0:36]], ignore_index=True) })
+newPredicts["Race"] = ""
+newPredicts["Race"].loc[0:51] = "Hispanic"
+newPredicts["Race"].loc[52:116] = "White"
+newPredicts["Race"].loc[117:153] = "Asian/Pacific Islander"
+newPredicts["Race"].loc[154:212] = "Black"
+newPredicts["Race"].loc[213:] = "American Indian/AN"
+newPredicts["Year"] = finalDF["Year"]
+newPredicts
+finalDF["Prediction"] = newPredicts["Prediction"].astype(float)
+finalDF
+fig, ax = plt.subplots(figsize=(7,7))
+seaborn.set(style = 'whitegrid') 
+finalDF['Residuals'] = res.resid
+seaborn.violinplot( data = finalDF, x= 'Race', y='Residuals') 
+plt.xlabel('Race')
+plt.ylabel('Residuals')
+finalDF
+seaborn.residplot(data=finalDF, x= "Percent Below Poverty", y="Residuals").set(title="Residuals vs Fitted Values Model")
+newRes = smf.ols(formula= "Prediction ~ Race * Q(\"Percent Below Poverty\")", data=finalDF).fit()
+print(newRes.summary())
+finalDF["Residuals for Predicted"] = newRes.resid
+seaborn.violinplot( data = finalDF, x= 'Race', y='Residuals for Predicted') 
+plt.xlabel('Race')
+plt.ylabel('Residuals for Predicted')
+seaborn.residplot(data=finalDF, x= "Percent Below Poverty", y="Residuals for Predicted").set(title="Residuals for Predicted vs Fitted Values Model")

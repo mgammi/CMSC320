@@ -78,7 +78,6 @@ plt.show()
 fig, ax = plt.subplots(figsize=(7, 7))
 for key, group in groupedDF :
         group.plot(ax = ax, kind='scatter', y='Percent Below Poverty', x='Year', label=key,color=colors[key])
-
 plt.xlabel('Year')
 plt.ylabel('Percent Below Poverty')
 plt.show()
@@ -95,7 +94,6 @@ for key, group in groupedDF :
     predictions['Year'] = x.astype(int).astype(str)
     plt.plot(x,race_y_pred, color = colors[key],  label = str(key) +  " RL")
     print(key +":" + str(reg.intercept_) + "," + str(reg.coef_)) #save for later
-
 plt.xlabel('Year')
 plt.ylabel('Percent Below Poverty')
 plt.show()
